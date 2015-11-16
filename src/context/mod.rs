@@ -2,6 +2,7 @@
 
 use gl;
 use libc;
+#[cfg(feature = "backtrace")]
 use backtrace;
 
 use std::mem;
@@ -768,6 +769,41 @@ impl Default for DebugCallbackBehavior {
     }
 }
 
+#[cfg(feature = "backtrace")]
+#[inline(always)]
+fn print_backtrace() {
+    print!("Backtrace:");
+
+    let mut frame_id = 1;
+    backtrace::trace(&mut |frame| {
+        let ip = frame.ip();
+        print!("\n{:>#4} - {:p}", frame_id, ip);
+
+        backtrace::resolve(ip, &mut |symbol| {
+            let name = String::from_utf8(symbol.name()
+                                               .unwrap_or(&b"<unknown>"[..])
+                                               .to_owned())
+                            .unwrap_or_else(|_| "<not-utf8>".to_owned());
+            let filename = String::from_utf8(symbol.filename()
+                                                   .unwrap_or(&b"<unknown>"[..])
+                                                   .to_owned())
+                                .unwrap_or_else(|_| "<not-utf8>".to_owned());
+            let line = symbol.lineno().map(|l| l.to_string())
+                                      .unwrap_or_else(|| "??".to_owned());
+
+            print!("\n         {} at {}:{}", name, filename, line);
+        });
+
+        frame_id += 1;
+        true
+    });
+
+    println!("\n");
+}
+
+#[cfg(not(feature = "backtrace"))]
+fn print_backtrace() { }
+
 /// The callback corresponding to `DebugMessageOnError`.
 fn default_debug_callback(_: debug::Source, ty: debug::MessageType, severity: debug::Severity,
                           _: u32, report_debug_output_errors: bool, message: &str)
@@ -787,36 +823,9 @@ fn default_debug_callback(_: debug::Source, ty: debug::MessageType, severity: de
     };
 
     if report_debug_output_errors {
-        print!("Debug message with high or medium severity: `{}`.\n\
-                Please report this error: https://github.com/tomaka/glium/issues\n\
-                Backtrace:",
-                message);
-
-        let mut frame_id = 1;
-        backtrace::trace(&mut |frame| {
-            let ip = frame.ip();
-            print!("\n{:>#4} - {:p}", frame_id, ip);
-
-            backtrace::resolve(ip, &mut |symbol| {
-                let name = String::from_utf8(symbol.name()
-                                                   .unwrap_or(&b"<unknown>"[..])
-                                                   .to_owned())
-                                .unwrap_or_else(|_| "<not-utf8>".to_owned());
-                let filename = String::from_utf8(symbol.filename()
-                                                       .unwrap_or(&b"<unknown>"[..])
-                                                       .to_owned())
-                                    .unwrap_or_else(|_| "<not-utf8>".to_owned());
-                let line = symbol.lineno().map(|l| l.to_string())
-                                          .unwrap_or_else(|| "??".to_owned());
-
-                print!("\n         {} at {}:{}", name, filename, line);
-            });
-
-            frame_id += 1;
-            true
-        });
-
-        println!("\n");
+        println!("Debug message with high or medium severity: `{}`.\n\
+                  Please report this error: https://github.com/tomaka/glium/issues",
+                  message);
     }
 }
 

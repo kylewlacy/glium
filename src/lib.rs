@@ -100,6 +100,7 @@ extern crate image;
 extern crate libc;
 #[cfg(feature = "nalgebra")]
 extern crate nalgebra;
+#[cfg(feature = "backtrace")]
 extern crate backtrace;
 extern crate smallvec;
 

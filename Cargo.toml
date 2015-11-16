@@ -23,7 +23,7 @@ build = "build/main.rs"
 exclude = ["doc", ".travis.yml", "circle.yml"]
 
 [features]
-default = ["glutin", "image", "nalgebra", "cgmath"]
+default = ["glutin", "image", "nalgebra", "cgmath", "backtrace"]
 unstable = []       # used for benchmarks
 
 [dependencies.glutin]
@@ -43,8 +43,11 @@ optional = true
 version = "0.4.0"
 optional = true
 
+[dependencies.backtrace]
+version = "0.1.5"
+optional = true
+
 [dependencies]
-backtrace = "0.1.5"
 lazy_static = "0.1"
 gl_common = "0.1.0"
 libc = "0.1"
